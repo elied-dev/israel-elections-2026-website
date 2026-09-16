@@ -1,7 +1,7 @@
 # Establish reuse rights for sources and images
 
 Type: research
-Status: open
+Status: claimed
 Blocked by: none
 
 ## Question

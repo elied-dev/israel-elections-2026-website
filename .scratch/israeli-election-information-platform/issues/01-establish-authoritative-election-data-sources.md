@@ -1,7 +1,7 @@
 # Establish authoritative election data sources
 
 Type: research
-Status: open
+Status: claimed
 Blocked by: none
 
 ## Question

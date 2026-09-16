@@ -1,7 +1,7 @@
 # Establish legal and safety constraints
 
 Type: research
-Status: open
+Status: claimed
 Blocked by: none
 
 ## Question
