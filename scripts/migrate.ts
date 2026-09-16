@@ -1,6 +1,12 @@
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { getDb } from '../src/db/client';
 
-await migrate(getDb(), { migrationsFolder: './drizzle' });
-console.log('Database migrations applied.');
-process.exit(0);
+async function main() {
+  await migrate(getDb(), { migrationsFolder: './drizzle' });
+  console.log('Database migrations applied.');
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

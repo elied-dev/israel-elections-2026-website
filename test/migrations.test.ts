@@ -15,3 +15,14 @@ test('directory migration creates an edition without inventing lists', async () 
   assert.match(migration, /INSERT INTO "election_editions"/);
   assert.doesNotMatch(migration, /INSERT INTO "electoral_lists"/);
 });
+
+test('migration runner is compatible with the repository CommonJS tsx runtime', async () => {
+  const runner = await readFile('scripts/migrate.ts', 'utf8');
+  assert.doesNotMatch(runner, /^await /m);
+  assert.match(runner, /async function main\(\)/);
+});
+
+test('database client is reusable by the standalone migration script', async () => {
+  const client = await readFile('src/db/client.ts', 'utf8');
+  assert.doesNotMatch(client, /^import 'server-only';/m);
+});
