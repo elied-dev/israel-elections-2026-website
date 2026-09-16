@@ -23,6 +23,10 @@ Produce an agreed product specification, ready for implementation planning, for 
 
 <!-- Closed ticket index. The detail for each decision lives only in its ticket. -->
 
+- [Establish authoritative election data sources](issues/01-establish-authoritative-election-data-sources.md): treat CEC pages as authoritative for ballot facts, political actors' publications as attributed platform sources, and reviewed snapshots with product-owned IDs as the initial import method.
+- [Establish legal and safety constraints](issues/02-establish-legal-and-safety-constraints.md): maintain a strictly informational posture, build privacy and accessibility controls into launch scope, redact dangerous submissions, and require qualified Israeli legal review.
+- [Establish reuse rights for sources and images](issues/03-establish-reuse-rights-for-sources-and-images.md): default to metadata, original summaries, and links; publish quotations, images, translations, or archives only with a recorded license or reviewed legal basis.
+
 ## Not yet specified
 
 - The sustainable ownership, funding, and volunteer model after the initial trusted team has operated the site long enough to expose the real workload.
