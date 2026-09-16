@@ -1,27 +1,9 @@
-import { eq } from 'drizzle-orm';
-import { getDb } from '@/db/client';
-import { authoritativeSources, electionEditions, electoralLists } from '@/db/schema';
+import { getElectionDirectory } from '@/election-directory';
 
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const db = getDb();
-  const edition = (await db.select().from(electionEditions).limit(1))[0];
-  const lists = edition
-    ? await db
-        .select({
-          id: electoralLists.id,
-          name: electoralLists.name,
-          ballotIdentifier: electoralLists.ballotIdentifier,
-          reviewState: electoralLists.reviewState,
-          sourceTitle: authoritativeSources.title,
-          sourceUrl: authoritativeSources.url,
-          retrievedAt: authoritativeSources.retrievedAt,
-        })
-        .from(electoralLists)
-        .leftJoin(authoritativeSources, eq(electoralLists.sourceId, authoritativeSources.id))
-        .where(eq(electoralLists.editionId, edition.id))
-    : [];
+  const { edition, lists } = await getElectionDirectory();
 
   return (
     <main>
@@ -43,9 +25,10 @@ export default async function HomePage() {
                 <p>Ballot identifier: {list.ballotIdentifier ?? 'Not yet available'}</p>
                 <p>Review state: {list.reviewState}</p>
                 <p>
-                  Source: {list.sourceUrl ? <a href={list.sourceUrl}>{list.sourceTitle}</a> : 'Not yet available'}
-                  {list.retrievedAt ? ` · Retrieved ${list.retrievedAt.toISOString().slice(0, 10)}` : ''}
+                  Source:{' '}
+                  {list.sourceUrl ? <a href={list.sourceUrl}>{list.sourceTitle}</a> : 'Not yet available'}
                 </p>
+                <p>Retrieved: {list.retrievedAt?.toISOString().slice(0, 10) ?? 'Not yet available'}</p>
               </li>
             ))}
           </ul>

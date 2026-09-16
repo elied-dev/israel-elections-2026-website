@@ -4,7 +4,7 @@
 
 **Goal:** Publish every approved Electoral List in the 2026 Election Edition with neutral ordering, authoritative provenance, explicit unavailable states, and methodology disclosures.
 
-**Architecture:** Keep the existing PostgreSQL schema and server-rendered Next.js route. Move the Drizzle read into one server-only query module, filter publication to `review_state = 'approved'`, order by stable list ID, and let the `/` page render the returned data. Verify behavior through the rendered page against the real migrated PostgreSQL schema.
+**Architecture:** Keep the existing PostgreSQL schema and server-rendered Next.js route. Move the Drizzle read into one server-side query module, filter publication to `review_state = 'approved'`, order by stable list ID, and let the `/` page render the returned data. Verify behavior through the rendered page against the real migrated PostgreSQL schema.
 
 **Tech Stack:** TypeScript 7, Next.js 16 App Router, React 19 server rendering, Drizzle ORM, PostgreSQL 16, Node test runner.
 
@@ -23,7 +23,7 @@
 
 ## File Map
 
-- Create `src/election-directory.ts`: server-only Drizzle query for the current Election Edition and its approved Electoral Lists.
+- Create `src/election-directory.ts`: server-side Drizzle query for the current Election Edition and its approved Electoral Lists.
 - Modify `src/app/page.tsx`: render query results and explicit unavailable provenance fields.
 - Modify `src/db/client.ts`: let idle PostgreSQL pools stop the Node test process without changing runtime query behavior.
 - Create `test/election-directory.test.ts`: seed disposable records, render `/`, and assert the public behavior from issue #18.
@@ -147,12 +147,11 @@ export function getDb() {
 }
 ```
 
-- [ ] **Step 4: Add the server-only directory query**
+- [ ] **Step 4: Add the server-side directory query**
 
-Create `src/election-directory.ts`:
+Create `src/election-directory.ts` (the repository does not install the optional `server-only` marker package, so keep this module server-side by importing it only from the Server Component):
 
 ```ts
-import 'server-only';
 import { and, asc, eq } from 'drizzle-orm';
 import { getDb } from '@/db/client';
 import { authoritativeSources, electionEditions, electoralLists } from '@/db/schema';
