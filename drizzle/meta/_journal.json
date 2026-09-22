@@ -36,6 +36,13 @@
       "when": 1790071516621,
       "tag": "0004_source-record-pages",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790072105772,
+      "tag": "0005_public-claims",
+      "breakpoints": true
     }
   ]
 }

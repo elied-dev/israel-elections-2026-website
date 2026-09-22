@@ -61,6 +61,17 @@ test('the Source Record migration normalizes versions, locations, and legally re
   assert.doesNotMatch(migration, /reliability|truth_score/i);
 });
 
+test('the Public Claim migration normalizes actors, evidence, quotations, and translations', async () => {
+  const migration = await readFile('drizzle/0005_public-claims.sql', 'utf8');
+  assert.match(migration, /CREATE TABLE "public_claims"/);
+  assert.match(migration, /CREATE TABLE "public_claim_speakers"/);
+  assert.match(migration, /CREATE TABLE "public_claim_subjects"/);
+  assert.match(migration, /CREATE TABLE "evidence_citations"/);
+  assert.match(migration, /CREATE TABLE "quotations"/);
+  assert.match(migration, /CREATE TABLE "quotation_translations"/);
+  assert.match(migration, /evidence_citation_locator_check/);
+});
+
 test('migration runner is compatible with the repository CommonJS tsx runtime', async () => {
   const runner = await readFile('scripts/migrate.ts', 'utf8');
   assert.doesNotMatch(runner, /^await /m);

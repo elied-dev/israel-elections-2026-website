@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
+  boolean,
   check,
   foreignKey,
   integer,
@@ -258,3 +259,79 @@ export const sourceReuse = pgTable('source_reuse', {
   requiredAttribution: text('required_attribution').notNull(),
   reviewState: text('review_state').notNull(),
 });
+
+export const publicClaims = pgTable('public_claims', {
+  id: integer('id').primaryKey(),
+  summary: text('summary').notNull(),
+  statementFrom: timestamp('statement_from', { withTimezone: true }),
+  statementFromPrecision: text('statement_from_precision').notNull(),
+  statementTo: timestamp('statement_to', { withTimezone: true }),
+  statementToPrecision: text('statement_to_precision').notNull(),
+  reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+  reviewState: text('review_state').notNull(),
+}, (table) => [
+  check('public_claim_summary_check', sql`btrim(${table.summary}) <> ''`),
+  check('public_claim_statement_from_precision_check', sql`(${table.statementFromPrecision} = 'unknown') = (${table.statementFrom} is null)`),
+  check('public_claim_statement_to_precision_check', sql`(${table.statementToPrecision} = 'unknown') = (${table.statementTo} is null)`),
+  check('public_claim_statement_precision_check', sql`${table.statementFromPrecision} in ('day', 'month', 'year', 'unknown') and ${table.statementToPrecision} in ('day', 'month', 'year', 'unknown')`),
+  check('public_claim_statement_dates_check', sql`${table.statementTo} is null or ${table.statementFrom} is null or ${table.statementTo} >= ${table.statementFrom}`),
+  check('public_claim_review_check', sql`${table.reviewState} <> 'approved' or ${table.reviewedAt} is not null`),
+]);
+
+export const publicClaimSpeakers = pgTable('public_claim_speakers', {
+  publicClaimId: integer('public_claim_id').notNull().references(() => publicClaims.id),
+  politicalActorId: integer('political_actor_id').notNull().references(() => politicalActors.id),
+}, (table) => [
+  primaryKey({ columns: [table.publicClaimId, table.politicalActorId] }),
+]);
+
+export const publicClaimSubjects = pgTable('public_claim_subjects', {
+  publicClaimId: integer('public_claim_id').notNull().references(() => publicClaims.id),
+  politicalActorId: integer('political_actor_id').notNull().references(() => politicalActors.id),
+}, (table) => [
+  primaryKey({ columns: [table.publicClaimId, table.politicalActorId] }),
+]);
+
+export const evidenceCitations = pgTable('evidence_citations', {
+  id: integer('id').primaryKey(),
+  publicClaimId: integer('public_claim_id').notNull().references(() => publicClaims.id),
+  sourceVersionId: integer('source_version_id').notNull().references(() => sourceVersions.id),
+  locatorType: text('locator_type').notNull(),
+  locator: text('locator').notNull(),
+  locatorPrecision: text('locator_precision').notNull(),
+  precisionExplanation: text('precision_explanation'),
+  reviewState: text('review_state').notNull(),
+}, (table) => [
+  unique('evidence_citation_unique').on(table.publicClaimId, table.sourceVersionId, table.locatorType, table.locator),
+  check('evidence_citation_locator_type_check', sql`${table.locatorType} in ('quotation', 'page', 'timestamp', 'section', 'other')`),
+  check('evidence_citation_locator_precision_check', sql`${table.locatorPrecision} in ('exact', 'best_available')`),
+  check('evidence_citation_locator_check', sql`btrim(${table.locator}) <> '' and (${table.locatorPrecision} = 'exact' or (${table.precisionExplanation} is not null and btrim(${table.precisionExplanation}) <> ''))`),
+]);
+
+export const quotations = pgTable('quotations', {
+  id: integer('id').primaryKey(),
+  evidenceCitationId: integer('evidence_citation_id').notNull().references(() => evidenceCitations.id),
+  sourceLanguage: text('source_language').notNull(),
+  textDirection: text('text_direction').notNull(),
+  text: text('text').notNull(),
+  reviewState: text('review_state').notNull(),
+}, (table) => [
+  check('quotation_content_check', sql`btrim(${table.sourceLanguage}) <> '' and btrim(${table.text}) <> ''`),
+  check('quotation_direction_check', sql`${table.textDirection} in ('ltr', 'rtl')`),
+]);
+
+export const quotationTranslations = pgTable('quotation_translations', {
+  id: integer('id').primaryKey(),
+  quotationId: integer('quotation_id').notNull().references(() => quotations.id),
+  language: text('language').notNull(),
+  textDirection: text('text_direction').notNull(),
+  text: text('text').notNull(),
+  machineAssisted: boolean('machine_assisted').notNull().default(false),
+  reviewState: text('review_state').notNull(),
+}, (table) => [
+  uniqueIndex('quotation_translation_approved_language_unique')
+    .on(table.quotationId, table.language)
+    .where(sql`${table.reviewState} = 'approved'`),
+  check('quotation_translation_content_check', sql`btrim(${table.language}) <> '' and btrim(${table.text}) <> ''`),
+  check('quotation_translation_direction_check', sql`${table.textDirection} in ('ltr', 'rtl')`),
+]);

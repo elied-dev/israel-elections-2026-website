@@ -36,7 +36,7 @@ export default async function SourceRecordPage({ params }: { params: Promise<{ i
       <section aria-labelledby="versions-heading">
         <h2 id="versions-heading">Source Versions</h2>
         {source.versions.length ? <ol>{source.versions.map((version) => (
-          <li key={version.id}>
+          <li key={version.id} id={`version-${version.id}`}>
             <h3>Version {version.id}: {label(version.changeType)}</h3>
             {version.previousVersionId !== null && <p>Changes version {version.previousVersionId}: {version.changeSummary}</p>}
             <p>Observed publication or update: {date(version.observedPublishedAt)}</p>

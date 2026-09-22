@@ -185,6 +185,7 @@ test('a permanent Source Record page publishes approved provenance, distinct ver
   assert.match(html, /2026-07-01/);
   assert.match(html, /Available/);
   assert.match(html, /Retrieved: 2026-07-02/);
+  assert.match(html, new RegExp(`id="version-${versionIds[0]}"`));
   assert.match(html, /Retrieved: 2026-07-04/);
   assert.match(html, /Original/);
   assert.match(html, /Correction/);
