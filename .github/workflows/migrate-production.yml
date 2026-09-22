@@ -32,7 +32,6 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - uses: actions/checkout@v7
-      - run: npx vercel@latest --prod --yes --token "$VERCEL_TOKEN" --scope elieddevs-projects
+      - run: curl --fail --silent --show-error --request POST "$VERCEL_DEPLOY_HOOK"
         env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
