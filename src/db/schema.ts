@@ -3,6 +3,7 @@ import {
   boolean,
   check,
   foreignKey,
+  index,
   integer,
   pgTable,
   primaryKey,
@@ -37,6 +38,7 @@ export const politicalActors = pgTable('political_actors', {
   currentDisplayName: text('current_display_name').notNull(),
   currentSlug: text('current_slug').notNull().unique(),
 }, (table) => [
+  index('political_actor_name_trgm_idx').using('gin', sql`lower(${table.currentDisplayName}) gin_trgm_ops`),
   check('political_actor_type_check', sql`${table.type} in ('person', 'political_party', 'electoral_list')`),
   check('political_actor_slug_not_numeric_check', sql`${table.currentSlug} !~ '^[0-9]+$'`),
 ]);
@@ -105,11 +107,29 @@ export const personNames = pgTable('person_names', {
   sourceId: integer('source_id').notNull().references(() => authoritativeSources.id),
   reviewState: text('review_state').notNull(),
 }, (table) => [
+  index('person_name_trgm_idx').using('gin', sql`lower(${table.name}) gin_trgm_ops`),
   check('person_name_type_check', sql`${table.nameType} in ('name', 'alias')`),
   check('person_name_valid_from_precision_check', sql`(${table.validFromPrecision} = 'unknown') = (${table.validFrom} is null)`),
   check('person_name_valid_to_precision_check', sql`(${table.validToPrecision} = 'unknown') = (${table.validTo} is null)`),
   check('person_name_precision_check', sql`${table.validFromPrecision} in ('day', 'month', 'year', 'unknown') and ${table.validToPrecision} in ('day', 'month', 'year', 'unknown')`),
   check('person_name_dates_check', sql`${table.validTo} is null or ${table.validFrom} is null or ${table.validTo} >= ${table.validFrom}`),
+]);
+
+export const politicalActorSearchTerms = pgTable('political_actor_search_terms', {
+  id: integer('id').primaryKey(),
+  politicalActorId: integer('political_actor_id').notNull().references(() => politicalActors.id),
+  term: text('term').notNull(),
+  termType: text('term_type').notNull(),
+  language: text('language').notNull(),
+  sourceId: integer('source_id').notNull().references(() => authoritativeSources.id),
+  reviewState: text('review_state').notNull(),
+}, (table) => [
+  unique('political_actor_search_term_unique').on(table.politicalActorId, table.term, table.termType, table.language),
+  index('political_actor_search_term_trgm_idx').using('gin', sql`lower(${table.term}) gin_trgm_ops`),
+  index('political_actor_search_term_english_idx').using('gin', sql`to_tsvector('english', ${table.term})`).where(sql`${table.language} = 'en' and ${table.reviewState} = 'approved'`),
+  index('political_actor_search_term_french_idx').using('gin', sql`to_tsvector('french', ${table.term})`).where(sql`${table.language} = 'fr' and ${table.reviewState} = 'approved'`),
+  check('political_actor_search_term_content_check', sql`btrim(${table.term}) <> '' and btrim(${table.language}) <> ''`),
+  check('political_actor_search_term_type_check', sql`${table.termType} in ('historical_name', 'alias', 'transliteration', 'spelling_variant')`),
 ]);
 
 export const partyAffiliations = pgTable('party_affiliations', {
@@ -206,13 +226,20 @@ export const sourceRecords = pgTable('source_records', {
   id: integer('id').primaryKey(),
   title: text('title').notNull(),
   sourceType: text('source_type').notNull(),
+  sourceLanguage: text('source_language').notNull(),
   author: text('author'),
   publisher: text('publisher'),
   publicationDate: timestamp('publication_date', { withTimezone: true }),
   availability: text('availability').notNull(),
   reviewState: text('review_state').notNull(),
 }, (table) => [
+  index('source_record_title_trgm_idx').using('gin', sql`lower(${table.title}) gin_trgm_ops`),
+  index('source_record_author_trgm_idx').using('gin', sql`lower(${table.author}) gin_trgm_ops`),
+  index('source_record_publisher_trgm_idx').using('gin', sql`lower(${table.publisher}) gin_trgm_ops`),
+  index('source_record_english_idx').using('gin', sql`to_tsvector('english', ${table.title} || ' ' || coalesce(${table.author}, '') || ' ' || coalesce(${table.publisher}, ''))`).where(sql`${table.sourceLanguage} = 'en' and ${table.reviewState} = 'approved'`),
+  index('source_record_french_idx').using('gin', sql`to_tsvector('french', ${table.title} || ' ' || coalesce(${table.author}, '') || ' ' || coalesce(${table.publisher}, ''))`).where(sql`${table.sourceLanguage} = 'fr' and ${table.reviewState} = 'approved'`),
   check('source_record_availability_check', sql`${table.availability} in ('available', 'unavailable')`),
+  check('source_record_language_check', sql`btrim(${table.sourceLanguage}) <> ''`),
 ]);
 
 export const sourceVersions = pgTable('source_versions', {
@@ -263,6 +290,7 @@ export const sourceReuse = pgTable('source_reuse', {
 export const publicClaims = pgTable('public_claims', {
   id: integer('id').primaryKey(),
   summary: text('summary').notNull(),
+  language: text('language').notNull(),
   statementFrom: timestamp('statement_from', { withTimezone: true }),
   statementFromPrecision: text('statement_from_precision').notNull(),
   statementTo: timestamp('statement_to', { withTimezone: true }),
@@ -270,7 +298,10 @@ export const publicClaims = pgTable('public_claims', {
   reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
   reviewState: text('review_state').notNull(),
 }, (table) => [
-  check('public_claim_summary_check', sql`btrim(${table.summary}) <> ''`),
+  index('public_claim_summary_trgm_idx').using('gin', sql`lower(${table.summary}) gin_trgm_ops`),
+  index('public_claim_summary_english_idx').using('gin', sql`to_tsvector('english', ${table.summary})`).where(sql`${table.language} = 'en' and ${table.reviewState} = 'approved'`),
+  index('public_claim_summary_french_idx').using('gin', sql`to_tsvector('french', ${table.summary})`).where(sql`${table.language} = 'fr' and ${table.reviewState} = 'approved'`),
+  check('public_claim_summary_check', sql`btrim(${table.summary}) <> '' and btrim(${table.language}) <> ''`),
   check('public_claim_statement_from_precision_check', sql`(${table.statementFromPrecision} = 'unknown') = (${table.statementFrom} is null)`),
   check('public_claim_statement_to_precision_check', sql`(${table.statementToPrecision} = 'unknown') = (${table.statementTo} is null)`),
   check('public_claim_statement_precision_check', sql`${table.statementFromPrecision} in ('day', 'month', 'year', 'unknown') and ${table.statementToPrecision} in ('day', 'month', 'year', 'unknown')`),
@@ -315,6 +346,35 @@ export const evidenceCitations = pgTable('evidence_citations', {
   check('evidence_citation_locator_check', sql`btrim(${table.locator}) <> '' and (${table.locatorPrecision} = 'exact' or (${table.precisionExplanation} is not null and btrim(${table.precisionExplanation}) <> ''))`),
 ]);
 
+export const tags = pgTable('tags', {
+  id: integer('id').primaryKey(),
+  name: text('name').notNull(),
+  language: text('language').notNull(),
+  reviewState: text('review_state').notNull(),
+}, (table) => [
+  unique('tag_name_language_unique').on(table.name, table.language),
+  index('tag_name_trgm_idx').using('gin', sql`lower(${table.name}) gin_trgm_ops`),
+  index('tag_name_english_idx').using('gin', sql`to_tsvector('english', ${table.name})`).where(sql`${table.language} = 'en' and ${table.reviewState} = 'approved'`),
+  index('tag_name_french_idx').using('gin', sql`to_tsvector('french', ${table.name})`).where(sql`${table.language} = 'fr' and ${table.reviewState} = 'approved'`),
+  check('tag_content_check', sql`btrim(${table.name}) <> '' and btrim(${table.language}) <> ''`),
+]);
+
+export const publicClaimTags = pgTable('public_claim_tags', {
+  publicClaimId: integer('public_claim_id').notNull().references(() => publicClaims.id),
+  tagId: integer('tag_id').notNull().references(() => tags.id),
+  reviewState: text('review_state').notNull(),
+}, (table) => [
+  primaryKey({ columns: [table.publicClaimId, table.tagId] }),
+]);
+
+export const sourceRecordTags = pgTable('source_record_tags', {
+  sourceRecordId: integer('source_record_id').notNull().references(() => sourceRecords.id),
+  tagId: integer('tag_id').notNull().references(() => tags.id),
+  reviewState: text('review_state').notNull(),
+}, (table) => [
+  primaryKey({ columns: [table.sourceRecordId, table.tagId] }),
+]);
+
 export const quotations = pgTable('quotations', {
   id: integer('id').primaryKey(),
   evidenceCitationId: integer('evidence_citation_id').notNull().references(() => evidenceCitations.id),
@@ -323,6 +383,9 @@ export const quotations = pgTable('quotations', {
   text: text('text').notNull(),
   reviewState: text('review_state').notNull(),
 }, (table) => [
+  index('quotation_text_trgm_idx').using('gin', sql`lower(${table.text}) gin_trgm_ops`),
+  index('quotation_text_english_idx').using('gin', sql`to_tsvector('english', ${table.text})`).where(sql`${table.sourceLanguage} = 'en' and ${table.reviewState} = 'approved'`),
+  index('quotation_text_french_idx').using('gin', sql`to_tsvector('french', ${table.text})`).where(sql`${table.sourceLanguage} = 'fr' and ${table.reviewState} = 'approved'`),
   check('quotation_content_check', sql`btrim(${table.sourceLanguage}) <> '' and btrim(${table.text}) <> ''`),
   check('quotation_direction_check', sql`${table.textDirection} in ('ltr', 'rtl')`),
 ]);
@@ -339,6 +402,9 @@ export const quotationTranslations = pgTable('quotation_translations', {
   uniqueIndex('quotation_translation_approved_language_unique')
     .on(table.quotationId, table.language)
     .where(sql`${table.reviewState} = 'approved'`),
+  index('quotation_translation_text_trgm_idx').using('gin', sql`lower(${table.text}) gin_trgm_ops`),
+  index('quotation_translation_text_english_idx').using('gin', sql`to_tsvector('english', ${table.text})`).where(sql`${table.language} = 'en' and ${table.reviewState} = 'approved'`),
+  index('quotation_translation_text_french_idx').using('gin', sql`to_tsvector('french', ${table.text})`).where(sql`${table.language} = 'fr' and ${table.reviewState} = 'approved'`),
   check('quotation_translation_content_check', sql`btrim(${table.language}) <> '' and btrim(${table.text}) <> ''`),
   check('quotation_translation_direction_check', sql`${table.textDirection} in ('ltr', 'rtl')`),
 ]);

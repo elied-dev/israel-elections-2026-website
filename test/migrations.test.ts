@@ -78,6 +78,20 @@ test('the Policy Position migration classifies reviewed Public Claims by non-emp
   assert.match(migration, /policy_position_topic_check/);
 });
 
+test('the Public Record search migration adds reviewed search metadata and PostgreSQL text indexes', async () => {
+  const migration = await readFile('drizzle/0007_public-record-search.sql', 'utf8');
+  assert.match(migration, /CREATE EXTENSION IF NOT EXISTS pg_trgm/);
+  assert.match(migration, /CREATE TABLE "political_actor_search_terms"/);
+  assert.match(migration, /CREATE TABLE "tags"/);
+  assert.match(migration, /CREATE TABLE "public_claim_tags"/);
+  assert.match(migration, /CREATE TABLE "source_record_tags"/);
+  assert.match(migration, /"language" text NOT NULL/);
+  assert.match(migration, /ADD COLUMN "source_language" text[\s\S]*ALTER COLUMN "source_language" SET NOT NULL/);
+  assert.match(migration, /gin_trgm_ops/);
+  assert.match(migration, /to_tsvector\('english'/);
+  assert.match(migration, /to_tsvector\('french'/);
+});
+
 test('migration runner is compatible with the repository CommonJS tsx runtime', async () => {
   const runner = await readFile('scripts/migrate.ts', 'utf8');
   assert.doesNotMatch(runner, /^await /m);

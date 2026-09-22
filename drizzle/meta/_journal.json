@@ -50,6 +50,13 @@
       "when": 1790072716948,
       "tag": "0006_policy-position-comparison",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790073247212,
+      "tag": "0007_public-record-search",
+      "breakpoints": true
     }
   ]
 }

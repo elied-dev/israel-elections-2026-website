@@ -44,6 +44,7 @@ before(async () => {
     id: sourceRecordId,
     title: 'Claim evidence source',
     sourceType: 'Official record',
+    sourceLanguage: 'en',
     publicationDate: new Date('2026-01-10T00:00:00Z'),
     availability: 'available',
     reviewState: 'approved',
@@ -58,6 +59,7 @@ before(async () => {
   await db.insert(publicClaims).values({
     id: publicClaimId,
     summary: 'A reviewed statement.',
+    language: 'en',
     statementFrom: new Date('2025-12-01T00:00:00Z'),
     statementFromPrecision: 'month',
     statementTo: null,

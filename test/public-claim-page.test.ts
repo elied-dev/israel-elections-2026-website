@@ -47,6 +47,7 @@ before(async () => {
     id: sourceRecordId,
     title: 'Reviewed interview',
     sourceType: 'Interview',
+    sourceLanguage: 'he',
     author: 'Reporter',
     publisher: 'Example News',
     publicationDate: new Date('2026-01-10T00:00:00Z'),
@@ -65,6 +66,7 @@ before(async () => {
     {
       id: claimIds[0],
       summary: 'The speakers made a reviewed public statement.',
+      language: 'en',
       statementFrom: new Date('2025-05-01T00:00:00Z'),
       statementFromPrecision: 'month',
       statementTo: null,
@@ -75,6 +77,7 @@ before(async () => {
     {
       id: claimIds[1],
       summary: 'Approved but unsupported claim.',
+      language: 'en',
       statementFrom: null,
       statementFromPrecision: 'unknown',
       statementTo: null,
@@ -85,6 +88,7 @@ before(async () => {
     {
       id: claimIds[2],
       summary: 'Pending private claim.',
+      language: 'en',
       statementFrom: null,
       statementFromPrecision: 'unknown',
       statementTo: null,

@@ -26,6 +26,7 @@ before(async () => {
     id: sourceRecordId,
     title: 'Reviewed report',
     sourceType: 'official record',
+    sourceLanguage: 'en',
     author: 'Records office',
     publisher: 'Example institution',
     publicationDate: new Date('2026-08-01T00:00:00Z'),

@@ -58,6 +58,7 @@ before(async () => {
     id: sourceRecordId,
     title: 'Reviewed policy interview',
     sourceType: 'Interview',
+    sourceLanguage: 'en',
     author: 'Reporter',
     publisher: 'Example News',
     publicationDate: new Date('2026-02-01T00:00:00Z'),
@@ -74,17 +75,17 @@ before(async () => {
   });
   await db.insert(publicClaims).values([
     {
-      id: claimIds[0], summary: 'Alpha supports a reviewed housing measure.',
+      id: claimIds[0], summary: 'Alpha supports a reviewed housing measure.', language: 'en',
       statementFrom: null, statementFromPrecision: 'unknown', statementTo: null, statementToPrecision: 'unknown',
       reviewedAt: new Date('2026-02-04T00:00:00Z'), reviewState: 'approved',
     },
     {
-      id: claimIds[1], summary: 'Beta opposes a reviewed housing measure.',
+      id: claimIds[1], summary: 'Beta opposes a reviewed housing measure.', language: 'en',
       statementFrom: null, statementFromPrecision: 'unknown', statementTo: null, statementToPrecision: 'unknown',
       reviewedAt: new Date('2026-02-04T00:00:00Z'), reviewState: 'approved',
     },
     {
-      id: claimIds[2], summary: 'Pending private policy position.',
+      id: claimIds[2], summary: 'Pending private policy position.', language: 'en',
       statementFrom: null, statementFromPrecision: 'unknown', statementTo: null, statementToPrecision: 'unknown',
       reviewedAt: null, reviewState: 'pending',
     },
