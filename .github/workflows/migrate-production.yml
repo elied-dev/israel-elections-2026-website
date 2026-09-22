@@ -43,26 +43,51 @@ jobs:
     needs: migrate
     runs-on: ubuntu-latest
     environment: production
+    env:
+      VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+      VERCEL_STATUS_TOKEN: ${{ secrets.VERCEL_STATUS_TOKEN }}
+      VERCEL_PROJECT_ID: prj_euZY1twsxAg8wXHM1b5OkalT8T22
+      VERCEL_TEAM_ID: team_wlz8SXBwzC7AA5WYruWvjKtS
     steps:
       - name: Trigger project deployment
-        run: curl --fail --silent --show-error --request POST "$VERCEL_DEPLOY_HOOK"
-        env:
-          VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        id: trigger
+        run: |
+          echo "started_at=$(date +%s%3N)" >> "$GITHUB_OUTPUT"
+          curl --fail --silent --show-error --request POST "$VERCEL_DEPLOY_HOOK" > deploy-hook-response.json
+          jq -r '.job.id // "unknown"' deploy-hook-response.json | xargs -I{} echo "hook_job_id={}" >> "$GITHUB_OUTPUT"
+      - name: Wait for Vercel deployment
+        id: vercel
+        run: |
+          for attempt in $(seq 1 60); do
+            response=$(curl --fail --silent --show-error \
+              --header "Authorization: Bearer $VERCEL_STATUS_TOKEN" \
+              "https://api.vercel.com/v6/deployments?projectId=$VERCEL_PROJECT_ID&teamId=$VERCEL_TEAM_ID&target=production&limit=20")
+            deployment=$(jq -c --argjson started_at "${{ steps.trigger.outputs.started_at }}" \
+              '[.deployments[] | select(.createdAt >= $started_at)] | sort_by(.createdAt) | last // empty' <<< "$response")
+            if [ -n "$deployment" ]; then
+              state=$(jq -r '.state' <<< "$deployment")
+              url=$(jq -r '.url' <<< "$deployment")
+              echo "state=$state" >> "$GITHUB_OUTPUT"
+              echo "url=https://$url" >> "$GITHUB_OUTPUT"
+              case "$state" in
+                READY) exit 0 ;;
+                ERROR|CANCELED) echo "Vercel deployment ended as $state" >&2; exit 1 ;;
+              esac
+            fi
+            sleep 10
+          done
+          echo 'Timed out after 10 minutes waiting for Vercel deployment.' >&2
+          exit 1
       - name: Summarize deployment
         if: always()
         run: |
           {
             echo '## Production deployment'
             echo
-            echo "- **Deploy-hook result:** \`${{ job.status }}\`"
-            echo "- **Commit:** \`${{ github.sha }}\`"
-            echo '- **Action:** Triggered the project-scoped Vercel deployment hook after migrations succeeded.'
+            echo "- **Deploy-hook job:** \`${{ steps.trigger.outputs.hook_job_id || 'not created' }}\`"
+            echo "- **Final Vercel state:** \`${{ steps.vercel.outputs.state || 'unknown' }}\`"
+            echo "- **Deployment URL:** ${{ steps.vercel.outputs.url || 'not available' }}"
+            echo '- **Timeout:** 10 minutes, checked every 10 seconds.'
             echo
-            echo '> The hook accepts a deployment request; it does not prove that Vercel has finished building or serving the new release.'
-            echo
-            echo '### Release checklist'
-            echo '1. Open the Vercel deployment created for this commit and confirm **Ready**.'
-            echo '2. Open the production site and run the public smoke path.'
-            echo '3. Check Vercel runtime logs for new route or database errors.'
-            echo '4. If the deploy hook failed, production remains on the previous Vercel deployment; inspect this job before retrying.'
+            echo 'A release is successful only when migration and Vercel deployment both report success. Check the deployment URL and Vercel runtime logs after every release.'
           } >> "$GITHUB_STEP_SUMMARY"
