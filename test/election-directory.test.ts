@@ -4,14 +4,17 @@ import { inArray } from 'drizzle-orm';
 import { renderToStaticMarkup } from 'react-dom/server';
 import HomePage from '../src/app/page';
 import { getDb } from '../src/db/client';
-import { authoritativeSources, electoralLists } from '../src/db/schema';
+import { authoritativeSources, electoralLists, politicalActors, politicalActorSlugs } from '../src/db/schema';
 
 const db = getDb();
 const sourceId = 18_001;
 const listIds = [18_001, 18_002, 18_003];
+const slugs = ['approved-complete-list', 'approved-incomplete-list', 'pending-list'];
 
 async function removeFixtures() {
   await db.delete(electoralLists).where(inArray(electoralLists.id, listIds));
+  await db.delete(politicalActorSlugs).where(inArray(politicalActorSlugs.slug, slugs));
+  await db.delete(politicalActors).where(inArray(politicalActors.id, listIds));
   await db.delete(authoritativeSources).where(inArray(authoritativeSources.id, [sourceId]));
 }
 
@@ -23,6 +26,16 @@ before(async () => {
     url: 'https://www.gov.il/en/departments/units/central-elections-committee',
     retrievedAt: new Date('2026-09-15T00:00:00Z'),
   });
+  await db.insert(politicalActors).values([
+    { id: 18_001, type: 'electoral_list', currentDisplayName: 'Approved Complete List', currentSlug: slugs[0] },
+    { id: 18_002, type: 'electoral_list', currentDisplayName: 'Approved Incomplete List', currentSlug: slugs[1] },
+    { id: 18_003, type: 'electoral_list', currentDisplayName: 'Pending List', currentSlug: slugs[2] },
+  ]);
+  await db.insert(politicalActorSlugs).values([
+    { slug: slugs[0], actorId: 18_001, validFrom: new Date('2026-09-01T00:00:00Z') },
+    { slug: slugs[1], actorId: 18_002, validFrom: new Date('2026-09-01T00:00:00Z') },
+    { slug: slugs[2], actorId: 18_003, validFrom: new Date('2026-09-01T00:00:00Z') },
+  ]);
   await db.insert(electoralLists).values([
     {
       id: 18_001,
