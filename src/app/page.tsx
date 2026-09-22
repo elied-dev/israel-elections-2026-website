@@ -9,6 +9,7 @@ export default async function HomePage() {
     <main>
       <h1>{edition?.name ?? '2026 Knesset election'}</h1>
       <p>Neutral election information with inspectable sources.</p>
+      <p><a href="/policy-positions">Compare Policy Positions</a></p>
       <section aria-labelledby="methodology-heading">
         <h2 id="methodology-heading">Methodology and non-affiliation</h2>
         <p>This directory presents reviewed official election facts. It does not rank, endorse, or recommend any Electoral List. This is an independent information service, not an official CEC service or political campaign.</p>

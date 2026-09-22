@@ -43,6 +43,13 @@
       "when": 1790072105772,
       "tag": "0005_public-claims",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790072716948,
+      "tag": "0006_policy-position-comparison",
+      "breakpoints": true
     }
   ]
 }

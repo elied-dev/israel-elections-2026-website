@@ -278,6 +278,13 @@ export const publicClaims = pgTable('public_claims', {
   check('public_claim_review_check', sql`${table.reviewState} <> 'approved' or ${table.reviewedAt} is not null`),
 ]);
 
+export const policyPositions = pgTable('policy_positions', {
+  publicClaimId: integer('public_claim_id').primaryKey().references(() => publicClaims.id),
+  topic: text('topic').notNull(),
+}, (table) => [
+  check('policy_position_topic_check', sql`btrim(${table.topic}) <> ''`),
+]);
+
 export const publicClaimSpeakers = pgTable('public_claim_speakers', {
   publicClaimId: integer('public_claim_id').notNull().references(() => publicClaims.id),
   politicalActorId: integer('political_actor_id').notNull().references(() => politicalActors.id),

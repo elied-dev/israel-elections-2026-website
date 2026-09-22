@@ -72,6 +72,12 @@ test('the Public Claim migration normalizes actors, evidence, quotations, and tr
   assert.match(migration, /evidence_citation_locator_check/);
 });
 
+test('the Policy Position migration classifies reviewed Public Claims by non-empty topic', async () => {
+  const migration = await readFile('drizzle/0006_policy-position-comparison.sql', 'utf8');
+  assert.match(migration, /CREATE TABLE "policy_positions"/);
+  assert.match(migration, /policy_position_topic_check/);
+});
+
 test('migration runner is compatible with the repository CommonJS tsx runtime', async () => {
   const runner = await readFile('scripts/migrate.ts', 'utf8');
   assert.doesNotMatch(runner, /^await /m);
