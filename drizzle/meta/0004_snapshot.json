@@ -1,0 +1,1694 @@
+{
+  "id": "abdc21e0-ea18-47b2-bcd1-e1e2ecc36ed2",
+  "prevId": "726391b2-6ca4-4c51-8463-eb26844b7504",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.application_readiness": {
+      "name": "application_readiness",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.authoritative_sources": {
+      "name": "authoritative_sources",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "retrieved_at": {
+          "name": "retrieved_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.candidacies": {
+      "name": "candidacies",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "person_id": {
+          "name": "person_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "electoral_list_id": {
+          "name": "electoral_list_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "edition_id": {
+          "name": "edition_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "candidacies_person_id_persons_id_fk": {
+          "name": "candidacies_person_id_persons_id_fk",
+          "tableFrom": "candidacies",
+          "tableTo": "persons",
+          "columnsFrom": [
+            "person_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "candidacy_electoral_list_edition_fk": {
+          "name": "candidacy_electoral_list_edition_fk",
+          "tableFrom": "candidacies",
+          "tableTo": "electoral_lists",
+          "columnsFrom": [
+            "electoral_list_id",
+            "edition_id"
+          ],
+          "columnsTo": [
+            "id",
+            "edition_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "candidacy_person_electoral_list_unique": {
+          "name": "candidacy_person_electoral_list_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "person_id",
+            "electoral_list_id"
+          ]
+        },
+        "candidacy_id_electoral_list_unique": {
+          "name": "candidacy_id_electoral_list_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "electoral_list_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.candidacy_revisions": {
+      "name": "candidacy_revisions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "candidacy_id": {
+          "name": "candidacy_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "electoral_list_id": {
+          "name": "electoral_list_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "position": {
+          "name": "position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "effective_from": {
+          "name": "effective_from",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "effective_to": {
+          "name": "effective_to",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_id": {
+          "name": "source_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "review_state": {
+          "name": "review_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "candidacy_revision_open_unique": {
+          "name": "candidacy_revision_open_unique",
+          "columns": [
+            {
+              "expression": "candidacy_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"candidacy_revisions\".\"effective_to\" is null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "candidacy_revision_current_position_unique": {
+          "name": "candidacy_revision_current_position_unique",
+          "columns": [
+            {
+              "expression": "electoral_list_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "position",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"candidacy_revisions\".\"effective_to\" is null and \"candidacy_revisions\".\"status\" = 'active' and \"candidacy_revisions\".\"review_state\" = 'approved'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "candidacy_revisions_source_id_authoritative_sources_id_fk": {
+          "name": "candidacy_revisions_source_id_authoritative_sources_id_fk",
+          "tableFrom": "candidacy_revisions",
+          "tableTo": "authoritative_sources",
+          "columnsFrom": [
+            "source_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "candidacy_revision_candidacy_list_fk": {
+          "name": "candidacy_revision_candidacy_list_fk",
+          "tableFrom": "candidacy_revisions",
+          "tableTo": "candidacies",
+          "columnsFrom": [
+            "candidacy_id",
+            "electoral_list_id"
+          ],
+          "columnsTo": [
+            "id",
+            "electoral_list_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "candidacy_revision_position_check": {
+          "name": "candidacy_revision_position_check",
+          "value": "\"candidacy_revisions\".\"position\" > 0"
+        },
+        "candidacy_revision_status_check": {
+          "name": "candidacy_revision_status_check",
+          "value": "\"candidacy_revisions\".\"status\" in ('active', 'withdrawn', 'disqualified', 'replaced')"
+        },
+        "candidacy_revision_dates_check": {
+          "name": "candidacy_revision_dates_check",
+          "value": "\"candidacy_revisions\".\"effective_to\" is null or \"candidacy_revisions\".\"effective_to\" > \"candidacy_revisions\".\"effective_from\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.election_editions": {
+      "name": "election_editions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.electoral_list_parties": {
+      "name": "electoral_list_parties",
+      "schema": "",
+      "columns": {
+        "electoral_list_id": {
+          "name": "electoral_list_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "political_party_id": {
+          "name": "political_party_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_id": {
+          "name": "source_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "review_state": {
+          "name": "review_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "electoral_list_parties_electoral_list_id_electoral_lists_id_fk": {
+          "name": "electoral_list_parties_electoral_list_id_electoral_lists_id_fk",
+          "tableFrom": "electoral_list_parties",
+          "tableTo": "electoral_lists",
+          "columnsFrom": [
+            "electoral_list_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "electoral_list_parties_political_party_id_political_parties_id_fk": {
+          "name": "electoral_list_parties_political_party_id_political_parties_id_fk",
+          "tableFrom": "electoral_list_parties",
+          "tableTo": "political_parties",
+          "columnsFrom": [
+            "political_party_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "electoral_list_parties_source_id_authoritative_sources_id_fk": {
+          "name": "electoral_list_parties_source_id_authoritative_sources_id_fk",
+          "tableFrom": "electoral_list_parties",
+          "tableTo": "authoritative_sources",
+          "columnsFrom": [
+            "source_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "electoral_list_parties_electoral_list_id_political_party_id_pk": {
+          "name": "electoral_list_parties_electoral_list_id_political_party_id_pk",
+          "columns": [
+            "electoral_list_id",
+            "political_party_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.electoral_lists": {
+      "name": "electoral_lists",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "edition_id": {
+          "name": "edition_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ballot_identifier": {
+          "name": "ballot_identifier",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_id": {
+          "name": "source_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "review_state": {
+          "name": "review_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "electoral_lists_id_political_actors_id_fk": {
+          "name": "electoral_lists_id_political_actors_id_fk",
+          "tableFrom": "electoral_lists",
+          "tableTo": "political_actors",
+          "columnsFrom": [
+            "id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "electoral_lists_edition_id_election_editions_id_fk": {
+          "name": "electoral_lists_edition_id_election_editions_id_fk",
+          "tableFrom": "electoral_lists",
+          "tableTo": "election_editions",
+          "columnsFrom": [
+            "edition_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "electoral_lists_source_id_authoritative_sources_id_fk": {
+          "name": "electoral_lists_source_id_authoritative_sources_id_fk",
+          "tableFrom": "electoral_lists",
+          "tableTo": "authoritative_sources",
+          "columnsFrom": [
+            "source_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "electoral_lists_id_edition_id_unique": {
+          "name": "electoral_lists_id_edition_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "edition_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.office_tenures": {
+      "name": "office_tenures",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "person_id": {
+          "name": "person_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "office_title": {
+          "name": "office_title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valid_from": {
+          "name": "valid_from",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "valid_from_precision": {
+          "name": "valid_from_precision",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valid_to": {
+          "name": "valid_to",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "valid_to_precision": {
+          "name": "valid_to_precision",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_id": {
+          "name": "source_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "review_state": {
+          "name": "review_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "office_tenures_person_id_persons_id_fk": {
+          "name": "office_tenures_person_id_persons_id_fk",
+          "tableFrom": "office_tenures",
+          "tableTo": "persons",
+          "columnsFrom": [
+            "person_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "office_tenures_source_id_authoritative_sources_id_fk": {
+          "name": "office_tenures_source_id_authoritative_sources_id_fk",
+          "tableFrom": "office_tenures",
+          "tableTo": "authoritative_sources",
+          "columnsFrom": [
+            "source_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "office_tenure_valid_from_precision_check": {
+          "name": "office_tenure_valid_from_precision_check",
+          "value": "(\"office_tenures\".\"valid_from_precision\" = 'unknown') = (\"office_tenures\".\"valid_from\" is null)"
+        },
+        "office_tenure_valid_to_precision_check": {
+          "name": "office_tenure_valid_to_precision_check",
+          "value": "(\"office_tenures\".\"valid_to_precision\" = 'unknown') = (\"office_tenures\".\"valid_to\" is null)"
+        },
+        "office_tenure_precision_check": {
+          "name": "office_tenure_precision_check",
+          "value": "\"office_tenures\".\"valid_from_precision\" in ('day', 'month', 'year', 'unknown') and \"office_tenures\".\"valid_to_precision\" in ('day', 'month', 'year', 'unknown')"
+        },
+        "office_tenure_dates_check": {
+          "name": "office_tenure_dates_check",
+          "value": "\"office_tenures\".\"valid_to\" is null or \"office_tenures\".\"valid_from\" is null or \"office_tenures\".\"valid_to\" >= \"office_tenures\".\"valid_from\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.party_affiliations": {
+      "name": "party_affiliations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "person_id": {
+          "name": "person_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "political_party_id": {
+          "name": "political_party_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valid_from": {
+          "name": "valid_from",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "valid_from_precision": {
+          "name": "valid_from_precision",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valid_to": {
+          "name": "valid_to",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "valid_to_precision": {
+          "name": "valid_to_precision",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_id": {
+          "name": "source_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "review_state": {
+          "name": "review_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "party_affiliations_person_id_persons_id_fk": {
+          "name": "party_affiliations_person_id_persons_id_fk",
+          "tableFrom": "party_affiliations",
+          "tableTo": "persons",
+          "columnsFrom": [
+            "person_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "party_affiliations_political_party_id_political_parties_id_fk": {
+          "name": "party_affiliations_political_party_id_political_parties_id_fk",
+          "tableFrom": "party_affiliations",
+          "tableTo": "political_parties",
+          "columnsFrom": [
+            "political_party_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "party_affiliations_source_id_authoritative_sources_id_fk": {
+          "name": "party_affiliations_source_id_authoritative_sources_id_fk",
+          "tableFrom": "party_affiliations",
+          "tableTo": "authoritative_sources",
+          "columnsFrom": [
+            "source_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "party_affiliation_valid_from_precision_check": {
+          "name": "party_affiliation_valid_from_precision_check",
+          "value": "(\"party_affiliations\".\"valid_from_precision\" = 'unknown') = (\"party_affiliations\".\"valid_from\" is null)"
+        },
+        "party_affiliation_valid_to_precision_check": {
+          "name": "party_affiliation_valid_to_precision_check",
+          "value": "(\"party_affiliations\".\"valid_to_precision\" = 'unknown') = (\"party_affiliations\".\"valid_to\" is null)"
+        },
+        "party_affiliation_precision_check": {
+          "name": "party_affiliation_precision_check",
+          "value": "\"party_affiliations\".\"valid_from_precision\" in ('day', 'month', 'year', 'unknown') and \"party_affiliations\".\"valid_to_precision\" in ('day', 'month', 'year', 'unknown')"
+        },
+        "party_affiliation_dates_check": {
+          "name": "party_affiliation_dates_check",
+          "value": "\"party_affiliations\".\"valid_to\" is null or \"party_affiliations\".\"valid_from\" is null or \"party_affiliations\".\"valid_to\" >= \"party_affiliations\".\"valid_from\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.person_names": {
+      "name": "person_names",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "person_id": {
+          "name": "person_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name_type": {
+          "name": "name_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valid_from": {
+          "name": "valid_from",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "valid_from_precision": {
+          "name": "valid_from_precision",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valid_to": {
+          "name": "valid_to",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "valid_to_precision": {
+          "name": "valid_to_precision",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_id": {
+          "name": "source_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "review_state": {
+          "name": "review_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "person_names_person_id_persons_id_fk": {
+          "name": "person_names_person_id_persons_id_fk",
+          "tableFrom": "person_names",
+          "tableTo": "persons",
+          "columnsFrom": [
+            "person_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "person_names_source_id_authoritative_sources_id_fk": {
+          "name": "person_names_source_id_authoritative_sources_id_fk",
+          "tableFrom": "person_names",
+          "tableTo": "authoritative_sources",
+          "columnsFrom": [
+            "source_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "person_name_type_check": {
+          "name": "person_name_type_check",
+          "value": "\"person_names\".\"name_type\" in ('name', 'alias')"
+        },
+        "person_name_valid_from_precision_check": {
+          "name": "person_name_valid_from_precision_check",
+          "value": "(\"person_names\".\"valid_from_precision\" = 'unknown') = (\"person_names\".\"valid_from\" is null)"
+        },
+        "person_name_valid_to_precision_check": {
+          "name": "person_name_valid_to_precision_check",
+          "value": "(\"person_names\".\"valid_to_precision\" = 'unknown') = (\"person_names\".\"valid_to\" is null)"
+        },
+        "person_name_precision_check": {
+          "name": "person_name_precision_check",
+          "value": "\"person_names\".\"valid_from_precision\" in ('day', 'month', 'year', 'unknown') and \"person_names\".\"valid_to_precision\" in ('day', 'month', 'year', 'unknown')"
+        },
+        "person_name_dates_check": {
+          "name": "person_name_dates_check",
+          "value": "\"person_names\".\"valid_to\" is null or \"person_names\".\"valid_from\" is null or \"person_names\".\"valid_to\" >= \"person_names\".\"valid_from\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.persons": {
+      "name": "persons",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "persons_id_political_actors_id_fk": {
+          "name": "persons_id_political_actors_id_fk",
+          "tableFrom": "persons",
+          "tableTo": "political_actors",
+          "columnsFrom": [
+            "id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.political_actor_slugs": {
+      "name": "political_actor_slugs",
+      "schema": "",
+      "columns": {
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "actor_id": {
+          "name": "actor_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valid_from": {
+          "name": "valid_from",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valid_to": {
+          "name": "valid_to",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "political_actor_slugs_actor_id_political_actors_id_fk": {
+          "name": "political_actor_slugs_actor_id_political_actors_id_fk",
+          "tableFrom": "political_actor_slugs",
+          "tableTo": "political_actors",
+          "columnsFrom": [
+            "actor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "political_actor_slug_dates_check": {
+          "name": "political_actor_slug_dates_check",
+          "value": "\"political_actor_slugs\".\"valid_to\" is null or \"political_actor_slugs\".\"valid_to\" > \"political_actor_slugs\".\"valid_from\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.political_actors": {
+      "name": "political_actors",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "current_display_name": {
+          "name": "current_display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "current_slug": {
+          "name": "current_slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "political_actors_current_slug_unique": {
+          "name": "political_actors_current_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "current_slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "political_actor_type_check": {
+          "name": "political_actor_type_check",
+          "value": "\"political_actors\".\"type\" in ('person', 'political_party', 'electoral_list')"
+        },
+        "political_actor_slug_not_numeric_check": {
+          "name": "political_actor_slug_not_numeric_check",
+          "value": "\"political_actors\".\"current_slug\" !~ '^[0-9]+$'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.political_parties": {
+      "name": "political_parties",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "political_parties_id_political_actors_id_fk": {
+          "name": "political_parties_id_political_actors_id_fk",
+          "tableFrom": "political_parties",
+          "tableTo": "political_actors",
+          "columnsFrom": [
+            "id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.political_status_items": {
+      "name": "political_status_items",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "political_status_id": {
+          "name": "political_status_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "party_affiliation_id": {
+          "name": "party_affiliation_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "office_tenure_id": {
+          "name": "office_tenure_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "candidacy_id": {
+          "name": "candidacy_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_id": {
+          "name": "source_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "review_state": {
+          "name": "review_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "political_status_item_party_unique": {
+          "name": "political_status_item_party_unique",
+          "columns": [
+            {
+              "expression": "political_status_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "party_affiliation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"political_status_items\".\"party_affiliation_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "political_status_item_office_unique": {
+          "name": "political_status_item_office_unique",
+          "columns": [
+            {
+              "expression": "political_status_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "office_tenure_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"political_status_items\".\"office_tenure_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "political_status_item_candidacy_unique": {
+          "name": "political_status_item_candidacy_unique",
+          "columns": [
+            {
+              "expression": "political_status_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "candidacy_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"political_status_items\".\"candidacy_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "political_status_items_political_status_id_political_statuses_id_fk": {
+          "name": "political_status_items_political_status_id_political_statuses_id_fk",
+          "tableFrom": "political_status_items",
+          "tableTo": "political_statuses",
+          "columnsFrom": [
+            "political_status_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "political_status_items_party_affiliation_id_party_affiliations_id_fk": {
+          "name": "political_status_items_party_affiliation_id_party_affiliations_id_fk",
+          "tableFrom": "political_status_items",
+          "tableTo": "party_affiliations",
+          "columnsFrom": [
+            "party_affiliation_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "political_status_items_office_tenure_id_office_tenures_id_fk": {
+          "name": "political_status_items_office_tenure_id_office_tenures_id_fk",
+          "tableFrom": "political_status_items",
+          "tableTo": "office_tenures",
+          "columnsFrom": [
+            "office_tenure_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "political_status_items_candidacy_id_candidacies_id_fk": {
+          "name": "political_status_items_candidacy_id_candidacies_id_fk",
+          "tableFrom": "political_status_items",
+          "tableTo": "candidacies",
+          "columnsFrom": [
+            "candidacy_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "political_status_items_source_id_authoritative_sources_id_fk": {
+          "name": "political_status_items_source_id_authoritative_sources_id_fk",
+          "tableFrom": "political_status_items",
+          "tableTo": "authoritative_sources",
+          "columnsFrom": [
+            "source_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "political_status_item_one_reference_check": {
+          "name": "political_status_item_one_reference_check",
+          "value": "((case when \"political_status_items\".\"party_affiliation_id\" is null then 0 else 1 end) + (case when \"political_status_items\".\"office_tenure_id\" is null then 0 else 1 end) + (case when \"political_status_items\".\"candidacy_id\" is null then 0 else 1 end)) = 1"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.political_statuses": {
+      "name": "political_statuses",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "person_id": {
+          "name": "person_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "summary": {
+          "name": "summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "verified_at": {
+          "name": "verified_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_id": {
+          "name": "source_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "review_state": {
+          "name": "review_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "superseded_at": {
+          "name": "superseded_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "political_status_current_approved_unique": {
+          "name": "political_status_current_approved_unique",
+          "columns": [
+            {
+              "expression": "person_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"political_statuses\".\"review_state\" = 'approved' and \"political_statuses\".\"superseded_at\" is null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "political_statuses_person_id_persons_id_fk": {
+          "name": "political_statuses_person_id_persons_id_fk",
+          "tableFrom": "political_statuses",
+          "tableTo": "persons",
+          "columnsFrom": [
+            "person_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "political_statuses_source_id_authoritative_sources_id_fk": {
+          "name": "political_statuses_source_id_authoritative_sources_id_fk",
+          "tableFrom": "political_statuses",
+          "tableTo": "authoritative_sources",
+          "columnsFrom": [
+            "source_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.source_records": {
+      "name": "source_records",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_type": {
+          "name": "source_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "author": {
+          "name": "author",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "publisher": {
+          "name": "publisher",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "publication_date": {
+          "name": "publication_date",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "availability": {
+          "name": "availability",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "review_state": {
+          "name": "review_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "source_record_availability_check": {
+          "name": "source_record_availability_check",
+          "value": "\"source_records\".\"availability\" in ('available', 'unavailable')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.source_reuse": {
+      "name": "source_reuse",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "source_version_id": {
+          "name": "source_version_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "material_type": {
+          "name": "material_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "retained_material": {
+          "name": "retained_material",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reuse_basis": {
+          "name": "reuse_basis",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "required_attribution": {
+          "name": "required_attribution",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "review_state": {
+          "name": "review_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "source_reuse_source_version_id_source_versions_id_fk": {
+          "name": "source_reuse_source_version_id_source_versions_id_fk",
+          "tableFrom": "source_reuse",
+          "tableTo": "source_versions",
+          "columnsFrom": [
+            "source_version_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.source_version_locations": {
+      "name": "source_version_locations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "source_version_id": {
+          "name": "source_version_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "location_type": {
+          "name": "location_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "review_state": {
+          "name": "review_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "source_version_locations_source_version_id_source_versions_id_fk": {
+          "name": "source_version_locations_source_version_id_source_versions_id_fk",
+          "tableFrom": "source_version_locations",
+          "tableTo": "source_versions",
+          "columnsFrom": [
+            "source_version_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "source_version_location_unique": {
+          "name": "source_version_location_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "source_version_id",
+            "url"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "source_version_location_type_check": {
+          "name": "source_version_location_type_check",
+          "value": "\"source_version_locations\".\"location_type\" in ('original', 'mirror')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.source_versions": {
+      "name": "source_versions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "source_record_id": {
+          "name": "source_record_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "change_type": {
+          "name": "change_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "change_summary": {
+          "name": "change_summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "previous_version_id": {
+          "name": "previous_version_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "observed_published_at": {
+          "name": "observed_published_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "retrieved_at": {
+          "name": "retrieved_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "checksum": {
+          "name": "checksum",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "review_state": {
+          "name": "review_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "source_version_original_approved_unique": {
+          "name": "source_version_original_approved_unique",
+          "columns": [
+            {
+              "expression": "source_record_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"source_versions\".\"change_type\" = 'original' and \"source_versions\".\"review_state\" = 'approved'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "source_versions_source_record_id_source_records_id_fk": {
+          "name": "source_versions_source_record_id_source_records_id_fk",
+          "tableFrom": "source_versions",
+          "tableTo": "source_records",
+          "columnsFrom": [
+            "source_record_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "source_version_predecessor_fk": {
+          "name": "source_version_predecessor_fk",
+          "tableFrom": "source_versions",
+          "tableTo": "source_versions",
+          "columnsFrom": [
+            "previous_version_id",
+            "source_record_id"
+          ],
+          "columnsTo": [
+            "id",
+            "source_record_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "source_versions_id_record_unique": {
+          "name": "source_versions_id_record_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "source_record_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "source_version_change_type_check": {
+          "name": "source_version_change_type_check",
+          "value": "\"source_versions\".\"change_type\" in ('original', 'edition', 'update', 'translation', 'correction')"
+        },
+        "source_version_predecessor_check": {
+          "name": "source_version_predecessor_check",
+          "value": "(\"source_versions\".\"change_type\" = 'original' and \"source_versions\".\"previous_version_id\" is null and \"source_versions\".\"change_summary\" is null) or (\"source_versions\".\"change_type\" <> 'original' and \"source_versions\".\"previous_version_id\" is not null and \"source_versions\".\"change_summary\" is not null)"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

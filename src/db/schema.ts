@@ -200,3 +200,61 @@ export const politicalStatusItems = pgTable('political_status_items', {
   uniqueIndex('political_status_item_office_unique').on(table.politicalStatusId, table.officeTenureId).where(sql`${table.officeTenureId} is not null`),
   uniqueIndex('political_status_item_candidacy_unique').on(table.politicalStatusId, table.candidacyId).where(sql`${table.candidacyId} is not null`),
 ]);
+
+export const sourceRecords = pgTable('source_records', {
+  id: integer('id').primaryKey(),
+  title: text('title').notNull(),
+  sourceType: text('source_type').notNull(),
+  author: text('author'),
+  publisher: text('publisher'),
+  publicationDate: timestamp('publication_date', { withTimezone: true }),
+  availability: text('availability').notNull(),
+  reviewState: text('review_state').notNull(),
+}, (table) => [
+  check('source_record_availability_check', sql`${table.availability} in ('available', 'unavailable')`),
+]);
+
+export const sourceVersions = pgTable('source_versions', {
+  id: integer('id').primaryKey(),
+  sourceRecordId: integer('source_record_id').notNull().references(() => sourceRecords.id),
+  changeType: text('change_type').notNull(),
+  changeSummary: text('change_summary'),
+  previousVersionId: integer('previous_version_id'),
+  observedPublishedAt: timestamp('observed_published_at', { withTimezone: true }),
+  retrievedAt: timestamp('retrieved_at', { withTimezone: true }).notNull(),
+  checksum: text('checksum'),
+  reviewState: text('review_state').notNull(),
+}, (table) => [
+  unique('source_versions_id_record_unique').on(table.id, table.sourceRecordId),
+  foreignKey({
+    columns: [table.previousVersionId, table.sourceRecordId],
+    foreignColumns: [table.id, table.sourceRecordId],
+    name: 'source_version_predecessor_fk',
+  }),
+  uniqueIndex('source_version_original_approved_unique')
+    .on(table.sourceRecordId)
+    .where(sql`${table.changeType} = 'original' and ${table.reviewState} = 'approved'`),
+  check('source_version_change_type_check', sql`${table.changeType} in ('original', 'edition', 'update', 'translation', 'correction')`),
+  check('source_version_predecessor_check', sql`(${table.changeType} = 'original' and ${table.previousVersionId} is null and ${table.changeSummary} is null) or (${table.changeType} <> 'original' and ${table.previousVersionId} is not null and ${table.changeSummary} is not null)`),
+]);
+
+export const sourceVersionLocations = pgTable('source_version_locations', {
+  id: integer('id').primaryKey(),
+  sourceVersionId: integer('source_version_id').notNull().references(() => sourceVersions.id),
+  url: text('url').notNull(),
+  locationType: text('location_type').notNull(),
+  reviewState: text('review_state').notNull(),
+}, (table) => [
+  unique('source_version_location_unique').on(table.sourceVersionId, table.url),
+  check('source_version_location_type_check', sql`${table.locationType} in ('original', 'mirror')`),
+]);
+
+export const sourceReuse = pgTable('source_reuse', {
+  id: integer('id').primaryKey(),
+  sourceVersionId: integer('source_version_id').notNull().references(() => sourceVersions.id),
+  materialType: text('material_type').notNull(),
+  retainedMaterial: text('retained_material').notNull(),
+  reuseBasis: text('reuse_basis').notNull(),
+  requiredAttribution: text('required_attribution').notNull(),
+  reviewState: text('review_state').notNull(),
+});

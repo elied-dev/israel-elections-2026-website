@@ -48,6 +48,19 @@ test('the stable Person profile migration adds dated history and Political Statu
   assert.match(migration, /political_status_item_one_reference_check/);
 });
 
+test('the Source Record migration normalizes versions, locations, and legally retained reuse', async () => {
+  const migration = await readFile('drizzle/0004_source-record-pages.sql', 'utf8');
+  assert.match(migration, /CREATE TABLE "source_records"/);
+  assert.match(migration, /CREATE TABLE "source_versions"/);
+  assert.match(migration, /CREATE TABLE "source_version_locations"/);
+  assert.match(migration, /CREATE TABLE "source_reuse"/);
+  assert.match(migration, /source_version_predecessor_fk/);
+  assert.match(migration, /source_version_location_unique/);
+  assert.match(migration, /"reuse_basis" text NOT NULL/);
+  assert.match(migration, /"required_attribution" text NOT NULL/);
+  assert.doesNotMatch(migration, /reliability|truth_score/i);
+});
+
 test('migration runner is compatible with the repository CommonJS tsx runtime', async () => {
   const runner = await readFile('scripts/migrate.ts', 'utf8');
   assert.doesNotMatch(runner, /^await /m);

@@ -29,6 +29,13 @@
       "when": 1790065072141,
       "tag": "0003_stable-person-profiles",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790071516621,
+      "tag": "0004_source-record-pages",
+      "breakpoints": true
     }
   ]
 }
