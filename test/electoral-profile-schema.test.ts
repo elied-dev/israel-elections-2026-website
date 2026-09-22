@@ -9,10 +9,15 @@ import {
   electionEditions,
   electoralListParties,
   electoralLists,
+  officeTenures,
+  partyAffiliations,
+  personNames,
   persons,
   politicalActors,
   politicalActorSlugs,
   politicalParties,
+  politicalStatusItems,
+  politicalStatuses,
 } from '../src/db/schema';
 
 const db = getDb();
@@ -27,8 +32,18 @@ const personBId = 19_012;
 const unattachedPersonId = 19_019;
 const candidacyAId = 19_001;
 const candidacyBId = 19_002;
+const personNameId = 20_001;
+const partyAffiliationId = 20_001;
+const officeTenureId = 20_001;
+const politicalStatusId = 20_001;
+const politicalStatusItemId = 20_001;
 
 async function removeFixtures() {
+  await db.delete(politicalStatusItems).where(inArray(politicalStatusItems.id, [politicalStatusItemId, 20_099]));
+  await db.delete(politicalStatuses).where(inArray(politicalStatuses.id, [politicalStatusId, 20_099]));
+  await db.delete(personNames).where(inArray(personNames.id, [personNameId, 20_099]));
+  await db.delete(partyAffiliations).where(inArray(partyAffiliations.id, [partyAffiliationId]));
+  await db.delete(officeTenures).where(inArray(officeTenures.id, [officeTenureId]));
   await db.delete(candidacyRevisions).where(inArray(candidacyRevisions.candidacyId, [candidacyAId, candidacyBId]));
   await db.delete(candidacies).where(inArray(candidacies.id, [candidacyAId, candidacyBId]));
   await db.delete(electoralListParties).where(inArray(electoralListParties.electoralListId, [listId]));
@@ -144,6 +159,63 @@ before(async () => {
     sourceId,
     reviewState: 'approved',
   });
+
+  await db.insert(personNames).values({
+    id: personNameId,
+    personId: personAId,
+    name: 'Person A',
+    nameType: 'name',
+    validFrom: new Date('2026-01-01T00:00:00Z'),
+    validFromPrecision: 'day',
+    validTo: null,
+    validToPrecision: 'unknown',
+    sourceId,
+    reviewState: 'approved',
+  });
+
+  await db.insert(partyAffiliations).values({
+    id: partyAffiliationId,
+    personId: personAId,
+    politicalPartyId: partyId,
+    validFrom: new Date('2026-01-01T00:00:00Z'),
+    validFromPrecision: 'day',
+    validTo: null,
+    validToPrecision: 'unknown',
+    sourceId,
+    reviewState: 'approved',
+  });
+
+  await db.insert(officeTenures).values({
+    id: officeTenureId,
+    personId: personAId,
+    officeTitle: 'Knesset Member',
+    validFrom: new Date('2026-01-01T00:00:00Z'),
+    validFromPrecision: 'day',
+    validTo: null,
+    validToPrecision: 'unknown',
+    sourceId,
+    reviewState: 'approved',
+  });
+
+  await db.insert(politicalStatuses).values({
+    id: politicalStatusId,
+    personId: personAId,
+    summary: 'Current Political Status',
+    verifiedAt: new Date('2026-09-01T00:00:00Z'),
+    sourceId,
+    reviewState: 'approved',
+    supersededAt: null,
+  });
+
+  await db.insert(politicalStatusItems).values({
+    id: politicalStatusItemId,
+    politicalStatusId,
+    partyAffiliationId,
+    officeTenureId: null,
+    candidacyId: null,
+    sourceId,
+    reviewState: 'approved',
+  });
 });
 
 after(removeFixtures);
@@ -184,5 +256,53 @@ test('a Candidacy referencing a mismatched Electoral List/Edition pair is reject
       editionId: wrongEditionId,
     }),
     rejectsWithConstraint('candidacy_electoral_list_edition_fk'),
+  );
+});
+
+test('a known-precision name requires its date', async () => {
+  await assert.rejects(
+    db.insert(personNames).values({
+      id: 20_099,
+      personId: personAId,
+      name: 'Undated known name',
+      nameType: 'name',
+      validFrom: null,
+      validFromPrecision: 'year',
+      validTo: null,
+      validToPrecision: 'unknown',
+      sourceId,
+      reviewState: 'approved',
+    }),
+    rejectsWithConstraint('person_name_valid_from_precision_check'),
+  );
+});
+
+test('a Political Status item references exactly one underlying record', async () => {
+  await assert.rejects(
+    db.insert(politicalStatusItems).values({
+      id: 20_099,
+      politicalStatusId: 20_001,
+      partyAffiliationId: 20_001,
+      officeTenureId: 20_001,
+      candidacyId: null,
+      sourceId,
+      reviewState: 'approved',
+    }),
+    rejectsWithConstraint('political_status_item_one_reference_check'),
+  );
+});
+
+test('a Person has at most one approved current Political Status', async () => {
+  await assert.rejects(
+    db.insert(politicalStatuses).values({
+      id: 20_099,
+      personId: personAId,
+      summary: 'Duplicate current status',
+      verifiedAt: new Date('2026-09-02T00:00:00Z'),
+      sourceId,
+      reviewState: 'approved',
+      supersededAt: null,
+    }),
+    rejectsWithConstraint('political_status_current_approved_unique'),
   );
 });

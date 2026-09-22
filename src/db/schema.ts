@@ -92,6 +92,59 @@ export const candidacies = pgTable('candidacies', {
   }),
 ]);
 
+export const personNames = pgTable('person_names', {
+  id: integer('id').primaryKey(),
+  personId: integer('person_id').notNull().references(() => persons.id),
+  name: text('name').notNull(),
+  nameType: text('name_type').notNull(),
+  validFrom: timestamp('valid_from', { withTimezone: true }),
+  validFromPrecision: text('valid_from_precision').notNull(),
+  validTo: timestamp('valid_to', { withTimezone: true }),
+  validToPrecision: text('valid_to_precision').notNull(),
+  sourceId: integer('source_id').notNull().references(() => authoritativeSources.id),
+  reviewState: text('review_state').notNull(),
+}, (table) => [
+  check('person_name_type_check', sql`${table.nameType} in ('name', 'alias')`),
+  check('person_name_valid_from_precision_check', sql`(${table.validFromPrecision} = 'unknown') = (${table.validFrom} is null)`),
+  check('person_name_valid_to_precision_check', sql`(${table.validToPrecision} = 'unknown') = (${table.validTo} is null)`),
+  check('person_name_precision_check', sql`${table.validFromPrecision} in ('day', 'month', 'year', 'unknown') and ${table.validToPrecision} in ('day', 'month', 'year', 'unknown')`),
+  check('person_name_dates_check', sql`${table.validTo} is null or ${table.validFrom} is null or ${table.validTo} >= ${table.validFrom}`),
+]);
+
+export const partyAffiliations = pgTable('party_affiliations', {
+  id: integer('id').primaryKey(),
+  personId: integer('person_id').notNull().references(() => persons.id),
+  politicalPartyId: integer('political_party_id').notNull().references(() => politicalParties.id),
+  validFrom: timestamp('valid_from', { withTimezone: true }),
+  validFromPrecision: text('valid_from_precision').notNull(),
+  validTo: timestamp('valid_to', { withTimezone: true }),
+  validToPrecision: text('valid_to_precision').notNull(),
+  sourceId: integer('source_id').notNull().references(() => authoritativeSources.id),
+  reviewState: text('review_state').notNull(),
+}, (table) => [
+  check('party_affiliation_valid_from_precision_check', sql`(${table.validFromPrecision} = 'unknown') = (${table.validFrom} is null)`),
+  check('party_affiliation_valid_to_precision_check', sql`(${table.validToPrecision} = 'unknown') = (${table.validTo} is null)`),
+  check('party_affiliation_precision_check', sql`${table.validFromPrecision} in ('day', 'month', 'year', 'unknown') and ${table.validToPrecision} in ('day', 'month', 'year', 'unknown')`),
+  check('party_affiliation_dates_check', sql`${table.validTo} is null or ${table.validFrom} is null or ${table.validTo} >= ${table.validFrom}`),
+]);
+
+export const officeTenures = pgTable('office_tenures', {
+  id: integer('id').primaryKey(),
+  personId: integer('person_id').notNull().references(() => persons.id),
+  officeTitle: text('office_title').notNull(),
+  validFrom: timestamp('valid_from', { withTimezone: true }),
+  validFromPrecision: text('valid_from_precision').notNull(),
+  validTo: timestamp('valid_to', { withTimezone: true }),
+  validToPrecision: text('valid_to_precision').notNull(),
+  sourceId: integer('source_id').notNull().references(() => authoritativeSources.id),
+  reviewState: text('review_state').notNull(),
+}, (table) => [
+  check('office_tenure_valid_from_precision_check', sql`(${table.validFromPrecision} = 'unknown') = (${table.validFrom} is null)`),
+  check('office_tenure_valid_to_precision_check', sql`(${table.validToPrecision} = 'unknown') = (${table.validTo} is null)`),
+  check('office_tenure_precision_check', sql`${table.validFromPrecision} in ('day', 'month', 'year', 'unknown') and ${table.validToPrecision} in ('day', 'month', 'year', 'unknown')`),
+  check('office_tenure_dates_check', sql`${table.validTo} is null or ${table.validFrom} is null or ${table.validTo} >= ${table.validFrom}`),
+]);
+
 export const candidacyRevisions = pgTable('candidacy_revisions', {
   id: integer('id').primaryKey(),
   candidacyId: integer('candidacy_id').notNull(),
@@ -117,4 +170,33 @@ export const candidacyRevisions = pgTable('candidacy_revisions', {
   check('candidacy_revision_position_check', sql`${table.position} > 0`),
   check('candidacy_revision_status_check', sql`${table.status} in ('active', 'withdrawn', 'disqualified', 'replaced')`),
   check('candidacy_revision_dates_check', sql`${table.effectiveTo} is null or ${table.effectiveTo} > ${table.effectiveFrom}`),
+]);
+
+export const politicalStatuses = pgTable('political_statuses', {
+  id: integer('id').primaryKey(),
+  personId: integer('person_id').notNull().references(() => persons.id),
+  summary: text('summary').notNull(),
+  verifiedAt: timestamp('verified_at', { withTimezone: true }).notNull(),
+  sourceId: integer('source_id').notNull().references(() => authoritativeSources.id),
+  reviewState: text('review_state').notNull(),
+  supersededAt: timestamp('superseded_at', { withTimezone: true }),
+}, (table) => [
+  uniqueIndex('political_status_current_approved_unique')
+    .on(table.personId)
+    .where(sql`${table.reviewState} = 'approved' and ${table.supersededAt} is null`),
+]);
+
+export const politicalStatusItems = pgTable('political_status_items', {
+  id: integer('id').primaryKey(),
+  politicalStatusId: integer('political_status_id').notNull().references(() => politicalStatuses.id),
+  partyAffiliationId: integer('party_affiliation_id').references(() => partyAffiliations.id),
+  officeTenureId: integer('office_tenure_id').references(() => officeTenures.id),
+  candidacyId: integer('candidacy_id').references(() => candidacies.id),
+  sourceId: integer('source_id').notNull().references(() => authoritativeSources.id),
+  reviewState: text('review_state').notNull(),
+}, (table) => [
+  check('political_status_item_one_reference_check', sql`((case when ${table.partyAffiliationId} is null then 0 else 1 end) + (case when ${table.officeTenureId} is null then 0 else 1 end) + (case when ${table.candidacyId} is null then 0 else 1 end)) = 1`),
+  uniqueIndex('political_status_item_party_unique').on(table.politicalStatusId, table.partyAffiliationId).where(sql`${table.partyAffiliationId} is not null`),
+  uniqueIndex('political_status_item_office_unique').on(table.politicalStatusId, table.officeTenureId).where(sql`${table.officeTenureId} is not null`),
+  uniqueIndex('political_status_item_candidacy_unique').on(table.politicalStatusId, table.candidacyId).where(sql`${table.candidacyId} is not null`),
 ]);

@@ -37,6 +37,17 @@ test('the political actor backfill for existing Electoral Lists runs before the 
   );
 });
 
+test('the stable Person profile migration adds dated history and Political Status snapshot tables', async () => {
+  const migration = await readFile('drizzle/0003_stable-person-profiles.sql', 'utf8');
+  assert.match(migration, /CREATE TABLE "person_names"/);
+  assert.match(migration, /CREATE TABLE "party_affiliations"/);
+  assert.match(migration, /CREATE TABLE "office_tenures"/);
+  assert.match(migration, /CREATE TABLE "political_statuses"/);
+  assert.match(migration, /CREATE TABLE "political_status_items"/);
+  assert.match(migration, /political_status_current_approved_unique/);
+  assert.match(migration, /political_status_item_one_reference_check/);
+});
+
 test('migration runner is compatible with the repository CommonJS tsx runtime', async () => {
   const runner = await readFile('scripts/migrate.ts', 'utf8');
   assert.doesNotMatch(runner, /^await /m);
