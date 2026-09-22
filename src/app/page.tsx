@@ -21,7 +21,7 @@ export default async function HomePage() {
           <ul>
             {lists.map((list) => (
               <li key={list.id}>
-                <h3>{list.name}</h3>
+                <h3><a href={`/electoral-lists/${list.currentSlug}`}>{list.name}</a></h3>
                 <p>Ballot identifier: {list.ballotIdentifier ?? 'Not yet available'}</p>
                 <p>Review state: {list.reviewState}</p>
                 <p>

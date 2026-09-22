@@ -81,4 +81,5 @@ test('the Election Edition directory publishes every approved list with neutral 
   assert.match(html, /Retrieved: Not yet available/);
   assert.match(html, /does not rank, endorse, or recommend any Electoral List/);
   assert.match(html, /not an official CEC service or political campaign/);
+  assert.match(html, /href="\/electoral-lists\/approved-complete-list"/);
 });

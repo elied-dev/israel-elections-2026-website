@@ -3,6 +3,7 @@ import { after, before, test } from 'node:test';
 import { inArray } from 'drizzle-orm';
 import { renderToStaticMarkup } from 'react-dom/server';
 import ElectoralListPage from '../src/app/electoral-lists/[reference]/page';
+import PersonIdentityPage from '../src/app/people/[id]/page';
 import { getDb } from '../src/db/client';
 import {
   authoritativeSources,
@@ -274,6 +275,36 @@ test('an unknown slug produces a 404', async () => {
 test('an unapproved Electoral List produces a 404', async () => {
   const digest = await digestOf(() => ElectoralListPage({
     params: Promise.resolve({ reference: 'pending-list-19209' }),
+  }));
+  assert.equal(digest, 'NEXT_HTTP_ERROR_FALLBACK;404');
+});
+
+test('a Person with an approved Candidacy renders their stable name and a neutral notice', async () => {
+  const html = renderToStaticMarkup(await PersonIdentityPage({
+    params: Promise.resolve({ id: String(personAId) }),
+  }));
+
+  assert.match(html, /Person A/);
+  assert.match(html, /Detailed profile information is not yet available\./);
+});
+
+test('an unknown Person id produces a 404', async () => {
+  const digest = await digestOf(() => PersonIdentityPage({
+    params: Promise.resolve({ id: '999999999' }),
+  }));
+  assert.equal(digest, 'NEXT_HTTP_ERROR_FALLBACK;404');
+});
+
+test('a nonnumeric Person id produces a 404', async () => {
+  const digest = await digestOf(() => PersonIdentityPage({
+    params: Promise.resolve({ id: 'not-a-number' }),
+  }));
+  assert.equal(digest, 'NEXT_HTTP_ERROR_FALLBACK;404');
+});
+
+test('a Person without an approved public Candidacy produces a 404', async () => {
+  const digest = await digestOf(() => PersonIdentityPage({
+    params: Promise.resolve({ id: String(personFId) }),
   }));
   assert.equal(digest, 'NEXT_HTTP_ERROR_FALLBACK;404');
 });

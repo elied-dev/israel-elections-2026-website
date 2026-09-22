@@ -1,6 +1,6 @@
 import { and, asc, eq } from 'drizzle-orm';
 import { getDb } from '@/db/client';
-import { authoritativeSources, electionEditions, electoralLists } from '@/db/schema';
+import { authoritativeSources, electionEditions, electoralLists, politicalActors } from '@/db/schema';
 
 export async function getElectionDirectory() {
   const db = getDb();
@@ -16,11 +16,13 @@ export async function getElectionDirectory() {
       name: electoralLists.name,
       ballotIdentifier: electoralLists.ballotIdentifier,
       reviewState: electoralLists.reviewState,
+      currentSlug: politicalActors.currentSlug,
       sourceTitle: authoritativeSources.title,
       sourceUrl: authoritativeSources.url,
       retrievedAt: authoritativeSources.retrievedAt,
     })
     .from(electoralLists)
+    .innerJoin(politicalActors, eq(politicalActors.id, electoralLists.id))
     .leftJoin(authoritativeSources, eq(electoralLists.sourceId, authoritativeSources.id))
     .where(
       and(
