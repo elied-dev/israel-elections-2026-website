@@ -26,12 +26,43 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run db:migrate
+      - name: Summarize migration
+        if: always()
+        run: |
+          {
+            echo '## Production migration'
+            echo
+            echo "- **Result:** \`${{ job.status }}\`"
+            echo "- **Commit:** \`${{ github.sha }}\`"
+            echo '- **Action:** Applied the complete Drizzle migration chain to the protected production database.'
+            echo
+            echo 'If this step failed, do not treat the application deployment as released. Read the migration logs before retrying.'
+          } >> "$GITHUB_STEP_SUMMARY"
 
   deploy:
     needs: migrate
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - run: curl --fail --silent --show-error --request POST "$VERCEL_DEPLOY_HOOK"
+      - name: Trigger project deployment
+        run: curl --fail --silent --show-error --request POST "$VERCEL_DEPLOY_HOOK"
         env:
           VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+      - name: Summarize deployment
+        if: always()
+        run: |
+          {
+            echo '## Production deployment'
+            echo
+            echo "- **Deploy-hook result:** \`${{ job.status }}\`"
+            echo "- **Commit:** \`${{ github.sha }}\`"
+            echo '- **Action:** Triggered the project-scoped Vercel deployment hook after migrations succeeded.'
+            echo
+            echo '> The hook accepts a deployment request; it does not prove that Vercel has finished building or serving the new release.'
+            echo
+            echo '### Release checklist'
+            echo '1. Open the Vercel deployment created for this commit and confirm **Ready**.'
+            echo '2. Open the production site and run the public smoke path.'
+            echo '3. Check Vercel runtime logs for new route or database errors.'
+            echo '4. If the deploy hook failed, production remains on the previous Vercel deployment; inspect this job before retrying.'
+          } >> "$GITHUB_STEP_SUMMARY"
