@@ -12,9 +12,13 @@ import {
   politicalParties,
 } from '@/db/schema';
 
+// PostgreSQL's integer columns are int4; values above this cannot match any row.
+const INT4_MAX = 2147483647;
+
 export async function getElectoralListProfile(reference: string) {
   const db = getDb();
   const isNumeric = /^\d+$/.test(reference);
+  if (isNumeric && Number(reference) > INT4_MAX) return null;
 
   const listActor = isNumeric
     ? (

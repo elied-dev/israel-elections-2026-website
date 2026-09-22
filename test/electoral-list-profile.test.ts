@@ -24,6 +24,7 @@ const sourceId = 19_201;
 const editionId = 19_201;
 const listId = 19_201;
 const pendingListId = 19_209;
+const emptyListId = 19_205;
 const approvedPartyId = 19_202;
 const pendingPartyId = 19_203;
 const personAId = 19_211;
@@ -33,13 +34,13 @@ const personDId = 19_214;
 const personEId = 19_215;
 const personFId = 19_216;
 const personIds = [personAId, personBId, personCId, personDId, personEId, personFId];
-const actorIds = [listId, pendingListId, approvedPartyId, pendingPartyId, ...personIds];
+const actorIds = [listId, pendingListId, emptyListId, approvedPartyId, pendingPartyId, ...personIds];
 
 async function removeFixtures() {
   await db.delete(candidacyRevisions).where(inArray(candidacyRevisions.electoralListId, [listId]));
   await db.delete(candidacies).where(inArray(candidacies.electoralListId, [listId]));
   await db.delete(electoralListParties).where(inArray(electoralListParties.electoralListId, [listId]));
-  await db.delete(electoralLists).where(inArray(electoralLists.id, [listId, pendingListId]));
+  await db.delete(electoralLists).where(inArray(electoralLists.id, [listId, pendingListId, emptyListId]));
   await db.delete(politicalParties).where(inArray(politicalParties.id, [approvedPartyId, pendingPartyId]));
   await db.delete(persons).where(inArray(persons.id, personIds));
   await db.delete(politicalActorSlugs).where(inArray(politicalActorSlugs.actorId, actorIds));
@@ -67,6 +68,7 @@ before(async () => {
   await db.insert(politicalActors).values([
     { id: listId, type: 'electoral_list', currentDisplayName: 'Future List', currentSlug: 'future-list' },
     { id: pendingListId, type: 'electoral_list', currentDisplayName: 'Pending List', currentSlug: 'pending-list-19209' },
+    { id: emptyListId, type: 'electoral_list', currentDisplayName: 'Empty List', currentSlug: 'empty-list-19205' },
     { id: approvedPartyId, type: 'political_party', currentDisplayName: 'Party One', currentSlug: 'party-one-19202' },
     { id: pendingPartyId, type: 'political_party', currentDisplayName: 'Pending Party', currentSlug: 'pending-party-19203' },
     { id: personAId, type: 'person', currentDisplayName: 'Person A', currentSlug: 'person-a-19211' },
@@ -81,6 +83,7 @@ before(async () => {
     { slug: 'future-list', actorId: listId, validFrom: new Date('2026-09-01T00:00:00Z') },
     { slug: 'former-list', actorId: listId, validFrom: new Date('2026-08-01T00:00:00Z'), validTo: new Date('2026-09-01T00:00:00Z') },
     { slug: 'pending-list-19209', actorId: pendingListId, validFrom: new Date('2026-09-01T00:00:00Z') },
+    { slug: 'empty-list-19205', actorId: emptyListId, validFrom: new Date('2026-09-01T00:00:00Z') },
     { slug: 'party-one-19202', actorId: approvedPartyId, validFrom: new Date('2026-09-01T00:00:00Z') },
     { slug: 'pending-party-19203', actorId: pendingPartyId, validFrom: new Date('2026-09-01T00:00:00Z') },
     { slug: 'person-a-19211', actorId: personAId, validFrom: new Date('2026-09-01T00:00:00Z') },
@@ -110,6 +113,15 @@ before(async () => {
       ballotIdentifier: 'פ',
       sourceId,
       reviewState: 'pending',
+    },
+    {
+      // An approved Electoral List with no represented parties, Candidacies, or history yet.
+      id: emptyListId,
+      editionId,
+      name: 'Empty List',
+      ballotIdentifier: null,
+      sourceId: null,
+      reviewState: 'approved',
     },
   ]);
 
@@ -238,17 +250,36 @@ test('the current-slug page renders the current order, parties, and history, hid
     params: Promise.resolve({ reference: 'future-list' }),
   }));
 
+  const candidatesStart = html.indexOf('id="candidates-heading"');
+  const historyStart = html.indexOf('id="history-heading"');
+  const methodologyStart = html.indexOf('id="methodology-heading"');
+  assert.ok(candidatesStart > 0 && historyStart > candidatesStart && methodologyStart > historyStart);
+  const currentSection = html.slice(candidatesStart, historyStart);
+  const historySection = html.slice(historyStart, methodologyStart);
+
   assert.ok(html.indexOf('Person A') < html.indexOf('Person B'));
   assert.match(html, /Represented Political Parties/);
   assert.match(html, /Party One/);
   assert.doesNotMatch(html, /Pending Party/);
   assert.match(html, /href="\/people\/19211"/);
   assert.match(html, /Candidacy history/);
-  assert.match(html, /Position 2/);
-  assert.match(html, /Withdrawn/);
-  assert.match(html, /Disqualified/);
-  assert.match(html, /Replaced/);
   assert.doesNotMatch(html, /Pending Person/);
+
+  // Current order: only the open active revisions for Person A (position 1) and Person B (position 2).
+  assert.match(currentSection, /Person A/);
+  assert.match(currentSection, /Person B/);
+  assert.doesNotMatch(currentSection, /Person C/);
+  assert.doesNotMatch(currentSection, /Person D/);
+  assert.doesNotMatch(currentSection, /Person E/);
+
+  // History: closed positions plus open withdrawn/disqualified/replaced revisions, but never the current open active ones.
+  assert.match(historySection, /Position 2/);
+  assert.match(historySection, /Withdrawn/);
+  assert.match(historySection, /Disqualified/);
+  assert.match(historySection, /Replaced/);
+  assert.doesNotMatch(historySection, /Position 1;/);
+  assert.doesNotMatch(historySection, /Position 2; Active from 2026-09-01 to Current/);
+  assert.doesNotMatch(historySection, /Person B/);
 });
 
 test('a numeric reference redirects to the canonical slug', async () => {
@@ -279,6 +310,23 @@ test('an unapproved Electoral List produces a 404', async () => {
   assert.equal(digest, 'NEXT_HTTP_ERROR_FALLBACK;404');
 });
 
+test('an approved Electoral List with no reviewed parties, current Candidates, or history renders all three neutral empty states', async () => {
+  const html = renderToStaticMarkup(await ElectoralListPage({
+    params: Promise.resolve({ reference: 'empty-list-19205' }),
+  }));
+
+  assert.match(html, /No reviewed represented Political Parties are available yet\./);
+  assert.match(html, /No reviewed current Candidates are available yet\./);
+  assert.match(html, /No reviewed Candidacy history is available yet\./);
+});
+
+test('a numeric reference above the PostgreSQL int4 range produces a 404 rather than a 500', async () => {
+  const digest = await digestOf(() => ElectoralListPage({
+    params: Promise.resolve({ reference: '2147483648' }),
+  }));
+  assert.equal(digest, 'NEXT_HTTP_ERROR_FALLBACK;404');
+});
+
 test('a Person with an approved Candidacy renders their stable name and a neutral notice', async () => {
   const html = renderToStaticMarkup(await PersonIdentityPage({
     params: Promise.resolve({ id: String(personAId) }),
@@ -305,6 +353,13 @@ test('a nonnumeric Person id produces a 404', async () => {
 test('a Person without an approved public Candidacy produces a 404', async () => {
   const digest = await digestOf(() => PersonIdentityPage({
     params: Promise.resolve({ id: String(personFId) }),
+  }));
+  assert.equal(digest, 'NEXT_HTTP_ERROR_FALLBACK;404');
+});
+
+test('a Person id above the PostgreSQL int4 range produces a 404 rather than a 500', async () => {
+  const digest = await digestOf(() => PersonIdentityPage({
+    params: Promise.resolve({ id: '2147483648' }),
   }));
   assert.equal(digest, 'NEXT_HTTP_ERROR_FALLBACK;404');
 });

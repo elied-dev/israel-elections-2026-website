@@ -19,6 +19,7 @@ const db = getDb();
 
 const sourceId = 19_001;
 const wrongEditionId = 19_001;
+const ownEditionId = 19_005;
 const listId = 19_001;
 const partyId = 19_002;
 const personAId = 19_011;
@@ -36,7 +37,7 @@ async function removeFixtures() {
   await db.delete(persons).where(inArray(persons.id, [personAId, personBId, unattachedPersonId]));
   await db.delete(politicalActorSlugs).where(inArray(politicalActorSlugs.actorId, [listId, partyId, personAId, personBId, unattachedPersonId]));
   await db.delete(politicalActors).where(inArray(politicalActors.id, [listId, partyId, personAId, personBId, unattachedPersonId]));
-  await db.delete(electionEditions).where(inArray(electionEditions.id, [wrongEditionId]));
+  await db.delete(electionEditions).where(inArray(electionEditions.id, [wrongEditionId, ownEditionId]));
   await db.delete(authoritativeSources).where(inArray(authoritativeSources.id, [sourceId]));
 }
 
@@ -54,6 +55,14 @@ before(async () => {
   await db.insert(electionEditions).values({
     id: wrongEditionId,
     name: 'Other election',
+    status: 'active',
+  });
+
+  // This test's own Election Edition, so it does not depend on shared Election
+  // Edition 1 seeded by another migration/test and can run in isolation.
+  await db.insert(electionEditions).values({
+    id: ownEditionId,
+    name: 'Schema test election',
     status: 'active',
   });
 
@@ -78,7 +87,7 @@ before(async () => {
 
   await db.insert(electoralLists).values({
     id: listId,
-    editionId: 1,
+    editionId: ownEditionId,
     name: 'Test List',
     ballotIdentifier: 'ת',
     sourceId,
@@ -94,8 +103,8 @@ before(async () => {
 
   // Two Candidacies on the same Electoral List/Edition.
   await db.insert(candidacies).values([
-    { id: candidacyAId, personId: personAId, electoralListId: listId, editionId: 1 },
-    { id: candidacyBId, personId: personBId, electoralListId: listId, editionId: 1 },
+    { id: candidacyAId, personId: personAId, electoralListId: listId, editionId: ownEditionId },
+    { id: candidacyBId, personId: personBId, electoralListId: listId, editionId: ownEditionId },
   ]);
 
   // Candidacy A: one closed position revision followed by one open active revision (history + current coexist).

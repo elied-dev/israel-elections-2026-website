@@ -69,6 +69,10 @@ ALTER TABLE "political_actor_slugs" ADD CONSTRAINT "political_actor_slugs_actor_
 ALTER TABLE "political_parties" ADD CONSTRAINT "political_parties_id_political_actors_id_fk" FOREIGN KEY ("id") REFERENCES "public"."political_actors"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE UNIQUE INDEX "candidacy_revision_open_unique" ON "candidacy_revisions" USING btree ("candidacy_id") WHERE "candidacy_revisions"."effective_to" is null;--> statement-breakpoint
 CREATE UNIQUE INDEX "candidacy_revision_current_position_unique" ON "candidacy_revisions" USING btree ("electoral_list_id","position") WHERE "candidacy_revisions"."effective_to" is null and "candidacy_revisions"."status" = 'active' and "candidacy_revisions"."review_state" = 'approved';--> statement-breakpoint
+-- Backfill Political Actor identities for existing Electoral Lists before the
+-- electoral_lists -> political_actors foreign key below. The FK requires every
+-- existing electoral_lists.id to already have a matching political_actors row;
+-- running the backfill after the FK would fail against any pre-existing data.
 INSERT INTO "political_actors" ("id", "type", "current_display_name", "current_slug")
 SELECT "id", 'electoral_list', "name", 'electoral-list-' || "id"
 FROM "electoral_lists";

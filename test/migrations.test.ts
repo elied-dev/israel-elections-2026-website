@@ -16,6 +16,27 @@ test('directory migration creates an edition without inventing lists', async () 
   assert.doesNotMatch(migration, /INSERT INTO "electoral_lists"/);
 });
 
+test('the political actor backfill for existing Electoral Lists runs before the electoral_lists political actor foreign key', async () => {
+  const migration = await readFile('drizzle/0002_electoral-list-profiles.sql', 'utf8');
+  const backfillIndex = migration.indexOf('INSERT INTO "political_actors"');
+  const slugBackfillIndex = migration.indexOf('INSERT INTO "political_actor_slugs"');
+  const foreignKeyIndex = migration.indexOf('electoral_lists_id_political_actors_id_fk');
+
+  assert.ok(backfillIndex > 0, 'expected a political_actors backfill INSERT');
+  assert.ok(slugBackfillIndex > backfillIndex, 'expected the slug backfill to follow the actor backfill');
+  assert.ok(
+    foreignKeyIndex > slugBackfillIndex,
+    'the backfill must run before the FK is added, or existing Electoral Lists would violate it and the migration would fail',
+  );
+
+  // The hand-edited backfill must explain itself in the migration file, since a
+  // future `db:generate` re-run would not know to reproduce this ordering.
+  assert.match(
+    migration,
+    /backfill[\s\S]*before[\s\S]*(foreign key|fk)|(foreign key|fk)[\s\S]*after[\s\S]*backfill/i,
+  );
+});
+
 test('migration runner is compatible with the repository CommonJS tsx runtime', async () => {
   const runner = await readFile('scripts/migrate.ts', 'utf8');
   assert.doesNotMatch(runner, /^await /m);
